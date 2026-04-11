@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OSCC Detection — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --surface2: #f0ece3;
+    --text: #1a1814;
+    --muted: #6b6456;
+    --accent: #c0392b;
+    --accent-light: #fdf0ee;
+    --accent-muted: #e8a89f;
+    --ok: #1a6b4a;
+    --ok-light: #edf7f2;
+    --border: rgba(0,0,0,0.1);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--text);
+    color: #fff;
+    padding: 2.5rem 3rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    line-height: 1.15;
+    font-weight: 400;
+  }
+
+  header h1 span { color: var(--accent-muted); }
+
+  header p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+    max-width: 340px;
+    line-height: 1.6;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+    display: grid;
+    gap: 2rem;
+  }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .stat .label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat .value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat .sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Upload Card */
+  .upload-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .card-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .card-header h2 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .card-body { padding: 1.5rem; }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    background: var(--surface2);
+    border-color: var(--accent-muted);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 1rem;
+    background: var(--accent-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .drop-icon svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; }
+
+  .drop-zone p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  .drop-zone p strong { color: var(--text); font-weight: 500; }
+
+  .formats {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    letter-spacing: 0.04em;
+  }
+
+  .preview-img {
+    display: none;
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin: 0 auto 1rem;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    margin-top: 1.25rem;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    margin-top: 0.75rem;
+  }
+
+  .btn-secondary:hover { opacity: 0.8; }
+
+  /* Result Panel */
+  #result-panel { display: none; }
+
+  .result-inner {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .result-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .result-header h2 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .result-body {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 580px) {
+    .result-body { grid-template-columns: 1fr; }
+  }
+
+  .result-img {
+    width: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+    max-height: 220px;
+  }
+
+  .verdict {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    line-height: 1.15;
+    margin-bottom: 0.35rem;
+  }
+
+  .verdict.normal { color: var(--ok); }
+  .verdict.oscc { color: var(--accent); }
+
+  .verdict-sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .confidence-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .conf-track {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .conf-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(.25,.8,.25,1);
+  }
+
+  .conf-fill.normal { background: var(--ok); }
+  .conf-fill.oscc { background: var(--accent); }
+
+  .conf-value {
+    font-size: 1.3rem;
+    font-weight: 500;
+  }
+
+  .conf-value.normal { color: var(--ok); }
+  .conf-value.oscc { color: var(--accent); }
+
+  /* Score bars */
+  .score-bars { margin-top: 1.25rem; }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .score-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    width: 52px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .score-track {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(.25,.8,.25,1);
+  }
+
+  .score-bar.normal { background: var(--ok); }
+  .score-bar.oscc { background: var(--accent); }
+
+  .score-pct {
+    font-size: 0.75rem;
+    font-weight: 500;
+    width: 40px;
+    text-align: right;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+
+  .disclaimer {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: #fffbea;
+    border-left: 3px solid #f0c040;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #7a5e00;
+    line-height: 1.5;
+  }
+
+  /* XAI Panels */
+  .xai-section { display: none; }
+
+  .xai-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .xai-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .xai-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .xai-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .xai-tag.lime-tag {
+    background: #eef6f1;
+    color: var(--ok);
+  }
+
+  .xai-header h2 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .xai-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .xai-body { padding: 1.5rem; }
+
+  .xai-body img {
+    width: 100%;
+    border-radius: 8px;
+    display: block;
+  }
+
+  .xai-legend {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* LIME loader */
+  .lime-loader {
+    display: none;
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .lime-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 1rem 0 0.5rem;
+  }
+
+  .lime-progress-bar {
+    height: 100%;
+    background: var(--ok);
+    border-radius: 99px;
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+    width: 30%;
+  }
+
+  @keyframes progress-indeterminate {
+    0% { margin-left: -30%; }
+    100% { margin-left: 100%; }
+  }
+
+  /* Architecture */
+  .arch-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+
+  .arch-body {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .arch-step {
+    background: var(--surface);
+    padding: 1.25rem 1rem;
+  }
+
+  .step-num {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+    color: var(--text);
+  }
+
+  .step-detail {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Loading */
+  .spinner {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .spin-ring {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 0.75rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    display: none;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-muted);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-top: 1rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>OSCC <span>Detection</span></h1>
+    <p>Histopathological image classifier for Oral Squamous Cell Carcinoma, powered by transfer learning on EfficientNetB3.</p>
+    <div class="badge-row">
+      <span class="badge">EfficientNetB3</span>
+      <span class="badge">TensorFlow</span>
+      <span class="badge">Grad-CAM</span>
+      <span class="badge">LIME</span>
+      <span class="badge">Flask API</span>
+    </div>
+  </div>
+  <p style="max-width:280px;">Upload a tissue slide image to classify it as <strong style="color:#fff;">Normal</strong> or <strong style="color:var(--accent-muted);">OSCC</strong> with full XAI explanations.</p>
+</header>
+
+<main>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="label">Base model</div>
+      <div class="value" style="font-size:1.3rem; padding-top:4px;">EfficientNetB3</div>
+      <div class="sub">Pretrained · ImageNet</div>
+    </div>
+    <div class="stat">
+      <div class="label">Input size</div>
+      <div class="value">224</div>
+      <div class="sub">× 224 × 3 pixels</div>
+    </div>
+    <div class="stat">
+      <div class="label">Classes</div>
+      <div class="value">2</div>
+      <div class="sub">Normal · OSCC</div>
+    </div>
+    <div class="stat">
+      <div class="label">XAI Methods</div>
+      <div class="value" style="font-size:1.3rem; padding-top:4px;">2</div>
+      <div class="sub">Grad-CAM · LIME</div>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-card">
+    <div class="card-header">
+      <div class="dot"></div>
+      <h2>Image upload</h2>
+    </div>
+    <div class="card-body">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff" />
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+        </div>
+        <img id="preview" class="preview-img" alt="Preview" />
+        <p id="drop-text"><strong>Click to upload</strong> or drag and drop</p>
+        <p class="formats">PNG · JPG · BMP · TIF — up to 16 MB</p>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+      <div class="spinner" id="spinner">
+        <div class="spin-ring"></div>
+        Running inference, Grad-CAM + LIME — this may take 60–90 seconds…
+      </div>
+
+      <button class="btn" id="predict-btn" disabled>Classify image</button>
+    </div>
+  </div>
+
+  <!-- Classification Result -->
+  <div id="result-panel">
+    <div class="result-inner">
+      <div class="result-header">
+        <div class="dot" id="result-dot"></div>
+        <h2>Classification result</h2>
+      </div>
+      <div class="result-body">
+        <img id="result-img" class="result-img" alt="Uploaded slide" />
+        <div class="result-info">
+          <div class="verdict" id="verdict-label"></div>
+          <div class="verdict-sub" id="verdict-sub"></div>
+
+          <div class="confidence-label">Model confidence</div>
+          <div class="conf-track">
+            <div class="conf-fill" id="conf-fill" style="width:0%"></div>
+          </div>
+          <div class="conf-value" id="conf-value"></div>
+
+          <!-- Per-class score bars -->
+          <div class="score-bars" id="score-bars"></div>
+
+          <div class="disclaimer">
+            For demonstration purposes only. Not a certified medical diagnostic tool. Always consult a qualified pathologist.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grad-CAM Panel -->
+  <div class="xai-section" id="gradcam-section">
+    <div class="xai-card">
+      <div class="xai-header">
+        <div class="xai-header-left">
+          <span class="xai-tag">Grad-CAM</span>
+          <h2>Gradient activation map</h2>
+        </div>
+        <span class="xai-desc">Highlights regions the model focused on to reach its decision</span>
+      </div>
+      <div class="xai-body">
+        <img id="gradcam-img" alt="Grad-CAM explanation" />
+        <div class="xai-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#d73027;"></div>
+            High activation (most influential)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#fee090;"></div>
+            Moderate activation
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#4575b4;"></div>
+            Low activation (least influential)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIME Panel -->
+  <div class="xai-section" id="lime-section">
+    <div class="xai-card">
+      <div class="xai-header">
+        <div class="xai-header-left">
+          <span class="xai-tag lime-tag">LIME</span>
+          <h2>Superpixel explanation</h2>
+        </div>
+        <span class="xai-desc">Identifies which tissue regions positively or negatively support the diagnosis</span>
+      </div>
+      <div class="xai-body">
+        <img id="lime-img" alt="LIME explanation" />
+        <div class="xai-legend" id="lime-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#1a6b4a;"></div>
+            Positive regions (support the prediction)
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#c0392b;"></div>
+            Negative regions (work against the prediction)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="arch-card">
+    <div class="card-header">
+      <div class="dot" style="background: #6b6456;"></div>
+      <h2>Model architecture</h2>
+    </div>
+    <div class="arch-body">
+      <div class="arch-step">
+        <div class="step-num">Layer 1</div>
+        <div class="step-name">EfficientNetB3</div>
+        <div class="step-detail">ImageNet weights · Global max pooling</div>
+      </div>
+      <div class="arch-step">
+        <div class="step-num">Layer 2</div>
+        <div class="step-name">Batch normalization</div>
+        <div class="step-detail">momentum=0.99 · ε=0.001</div>
+      </div>
+      <div class="arch-step">
+        <div class="step-num">Layer 3</div>
+        <div class="step-name">Dense (256)</div>
+        <div class="step-detail">ReLU · L1 + L2 regularization</div>
+      </div>
+      <div class="arch-step">
+        <div class="step-num">Layer 4</div>
+        <div class="step-name">Dropout (45%)</div>
+        <div class="step-detail">seed=123 · prevents overfitting</div>
+      </div>
+      <div class="arch-step">
+        <div class="step-num">Output</div>
+        <div class="step-name">Dense (2)</div>
+        <div class="step-detail">Softmax · Normal / OSCC</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  OSCC Detection · EfficientNetB3 · Grad-CAM + LIME · Flask + TensorFlow
+</footer>
+
+<script>
+const fileInput    = document.getElementById('file-input');
+const dropZone     = document.getElementById('drop-zone');
+const preview      = document.getElementById('preview');
+const dropText     = document.getElementById('drop-text');
+const predictBtn   = document.getElementById('predict-btn');
+const spinner      = document.getElementById('spinner');
+const errorMsg     = document.getElementById('error-msg');
+const resultPanel  = document.getElementById('result-panel');
+const gradcamSec   = document.getElementById('gradcam-section');
+const limeSec      = document.getElementById('lime-section');
+const limeImg      = document.getElementById('lime-img');
+const limeLegend   = document.getElementById('lime-legend');
+
+let selectedFile = null;
+
+function showPreview(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    dropText.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+  selectedFile = file;
+  predictBtn.disabled = false;
+  errorMsg.style.display = 'none';
+  resultPanel.style.display = 'none';
+  gradcamSec.style.display = 'none';
+  limeSec.style.display = 'none';
+}
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) showPreview(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) showPreview(file);
+});
+
+// ── Classify + Grad-CAM + LIME ──────────────────────────────────────────────
+predictBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+
+  predictBtn.disabled = true;
+  spinner.style.display = 'block';
+  errorMsg.style.display = 'none';
+  resultPanel.style.display = 'none';
+  gradcamSec.style.display = 'none';
+  limeSec.style.display = 'none';
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    const res = await fetch('/predict', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    spinner.style.display = 'none';
+    predictBtn.disabled = false;
+
+    if (data.error) {
+      errorMsg.textContent = 'Error: ' + data.error;
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    const cls   = data.prediction.class;
+    const conf  = data.prediction.confidence;
+    const scores = data.prediction.scores;
+    const isOSCC = cls === 'OSCC';
+    const colorClass = isOSCC ? 'oscc' : 'normal';
+
+    // Result panel
+    document.getElementById('result-img').src = 'data:image/jpeg;base64,' + data.image;
+    document.getElementById('verdict-label').textContent = cls;
+    document.getElementById('verdict-label').className = 'verdict ' + colorClass;
+    document.getElementById('verdict-sub').textContent = isOSCC
+      ? 'The model has detected features consistent with Oral Squamous Cell Carcinoma.'
+      : 'The model found no features consistent with OSCC. Tissue appears histologically normal.';
+    document.getElementById('result-dot').style.background = isOSCC ? 'var(--accent)' : 'var(--ok)';
+
+    const fill = document.getElementById('conf-fill');
+    fill.className = 'conf-fill ' + colorClass;
+    setTimeout(() => { fill.style.width = conf + '%'; }, 50);
+    document.getElementById('conf-value').textContent = conf.toFixed(1) + '%';
+    document.getElementById('conf-value').className = 'conf-value ' + colorClass;
+
+    // Per-class score bars
+    const scoreBarsEl = document.getElementById('score-bars');
+    scoreBarsEl.innerHTML = Object.entries(scores).map(([label, pct]) => {
+      const cls2 = label === 'OSCC' ? 'oscc' : 'normal';
+      return `
+        <div class="score-row">
+          <span class="score-name">${label}</span>
+          <div class="score-track">
+            <div class="score-bar ${cls2}" style="width:0%" data-pct="${pct}"></div>
+          </div>
+          <span class="score-pct">${pct.toFixed(1)}%</span>
+        </div>`;
+    }).join('');
+    setTimeout(() => {
+      scoreBarsEl.querySelectorAll('.score-bar').forEach(bar => {
+        bar.style.width = bar.dataset.pct + '%';
+      });
+    }, 50);
+
+    resultPanel.style.display = 'block';
+
+    // Grad-CAM
+    document.getElementById('gradcam-img').src = 'data:image/png;base64,' + data.gradcam;
+    gradcamSec.style.display = 'block';
+
+    // LIME — display automatically alongside Grad-CAM
+    limeImg.src = 'data:image/png;base64,' + data.lime;
+    limeSec.style.display = 'block';
+
+    resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    spinner.style.display = 'none';
+    predictBtn.disabled = false;
+    errorMsg.textContent = 'Could not connect to the server. Make sure the Flask app is running at localhost:5000.';
+    errorMsg.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
