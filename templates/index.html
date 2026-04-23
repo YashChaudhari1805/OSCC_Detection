@@ -1,869 +1,202 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OSCC · Clinical AI</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-/* ── Reset ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
-
-/* ── Tokens ── */
-:root{
-  --bg:#04080f;
-  --orb1:rgba(0,200,140,0.07);
-  --orb2:rgba(0,120,255,0.05);
-  --orb3:rgba(120,0,200,0.04);
-
-  --glass-bg:rgba(255,255,255,0.04);
-  --glass-bg-hi:rgba(255,255,255,0.07);
-  --glass-border:rgba(255,255,255,0.08);
-  --glass-border-hi:rgba(255,255,255,0.16);
-  --glass-shadow:0 8px 40px rgba(0,0,0,0.5),0 1px 0 rgba(255,255,255,0.06) inset;
-  --glass-shadow-sm:0 4px 20px rgba(0,0,0,0.4),0 1px 0 rgba(255,255,255,0.05) inset;
-
-  --text:#e4eaf2;
-  --text2:rgba(228,234,242,0.55);
-  --text3:rgba(228,234,242,0.25);
-
-  --green:#00e5a0;
-  --green-dim:rgba(0,229,160,0.1);
-  --green-border:rgba(0,229,160,0.25);
-  --green-glow:rgba(0,229,160,0.15);
-
-  --red:#ff4d6a;
-  --red-dim:rgba(255,77,106,0.1);
-  --red-border:rgba(255,77,106,0.25);
-
-  --amber:#f5a623;
-  --amber-dim:rgba(245,166,35,0.1);
-  --amber-border:rgba(245,166,35,0.22);
-
-  --blue:rgba(80,160,255,0.9);
-  --blue-dim:rgba(80,160,255,0.1);
-  --blue-border:rgba(80,160,255,0.22);
-
-  --r-sm:6px; --r:10px; --r-lg:14px; --r-xl:20px;
-  --mono:'IBM Plex Mono',monospace;
-  --sans:'Syne',sans-serif;
-}
-[data-theme="light"]{
-  --bg:#eef1f7;
-  --orb1:rgba(0,180,120,0.08);
-  --orb2:rgba(0,100,220,0.06);
-  --orb3:rgba(100,0,180,0.04);
-  --glass-bg:rgba(255,255,255,0.6);
-  --glass-bg-hi:rgba(255,255,255,0.82);
-  --glass-border:rgba(0,0,0,0.08);
-  --glass-border-hi:rgba(0,0,0,0.15);
-  --glass-shadow:0 8px 40px rgba(0,0,0,0.1),0 1px 0 rgba(255,255,255,0.9) inset;
-  --glass-shadow-sm:0 4px 16px rgba(0,0,0,0.08),0 1px 0 rgba(255,255,255,0.8) inset;
-  --text:#0d1219;
-  --text2:rgba(13,18,25,0.55);
-  --text3:rgba(13,18,25,0.28);
-  --green:#008f60;
-  --green-dim:rgba(0,143,96,0.08);
-  --green-border:rgba(0,143,96,0.22);
-  --red:#cc2a42;
-  --red-dim:rgba(204,42,66,0.08);
-  --red-border:rgba(204,42,66,0.22);
-  --amber:#b87100;
-  --amber-dim:rgba(184,113,0,0.08);
-}
-
-body{
-  font-family:var(--sans);
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
-  transition:background .3s,color .3s;
-}
-
-/* ── Ambient orbs ── */
-.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(90px)}
-.o1{width:700px;height:700px;top:-200px;left:-180px;background:var(--orb1)}
-.o2{width:600px;height:600px;top:40%;right:-200px;background:var(--orb2)}
-.o3{width:500px;height:500px;bottom:-150px;left:35%;background:var(--orb3)}
-
-/* ── Glass util ── */
-.glass{
-  background:var(--glass-bg);
-  border:1px solid var(--glass-border);
-  backdrop-filter:blur(24px) saturate(1.6);
-  -webkit-backdrop-filter:blur(24px) saturate(1.6);
-  box-shadow:var(--glass-shadow);
-  transition:background .2s,border-color .2s;
-}
-.glass:hover{background:var(--glass-bg-hi);border-color:var(--glass-border-hi)}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--glass-border-hi);border-radius:4px}
-
-/* ── Animations ── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
-@keyframes scan{0%{top:-1px}100%{top:100%}}
-@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
-.fade-up{animation:fadeUp .35s ease both}
-
-/* ══════════════════════════════════════════════
-   AUTH GATE
-══════════════════════════════════════════════ */
-#auth-gate{
-  position:fixed;inset:0;z-index:100;
-  display:flex;align-items:center;justify-content:center;
-  padding:1.5rem;
-  background:var(--bg);
-}
-[data-theme="dark"] #auth-gate::before{
-  content:'';position:fixed;inset:0;z-index:-1;
-  background-image:
-    linear-gradient(var(--glass-border) 1px,transparent 1px),
-    linear-gradient(90deg,var(--glass-border) 1px,transparent 1px);
-  background-size:56px 56px;
-  pointer-events:none;
-}
-
-.auth-card{
-  width:100%;max-width:430px;
-  border-radius:var(--r-xl);
-  padding:2.5rem;
-  position:relative;
-  overflow:hidden;
-  animation:fadeUp .4s ease;
-}
-/* top accent bar */
-.auth-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--green),transparent);
-}
-
-.auth-brand{display:flex;align-items:center;gap:.75rem;margin-bottom:2rem}
-.auth-brand-icon{
-  width:38px;height:38px;border-radius:var(--r);
-  background:var(--green-dim);border:1px solid var(--green-border);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.auth-brand-icon svg{width:18px;height:18px;stroke:var(--green);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.auth-brand-name{font-size:.82rem;font-family:var(--mono);color:var(--text);font-weight:500;letter-spacing:.06em}
-.auth-brand-sub{font-size:.62rem;font-family:var(--mono);color:var(--text3);margin-top:2px;letter-spacing:.08em;text-transform:uppercase}
-
-.auth-title{font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.5rem}
-.auth-sub{font-size:.82rem;color:var(--text2);line-height:1.65;margin-bottom:1.75rem}
-
-.auth-field{position:relative;margin-bottom:.5rem}
-.auth-input{
-  width:100%;background:rgba(255,255,255,0.04);
-  border:1px solid var(--glass-border-hi);
-  border-radius:var(--r);
-  padding:.78rem 2.8rem .78rem .9rem;
-  color:var(--text);font-size:.82rem;font-family:var(--mono);
-  letter-spacing:.04em;outline:none;
-  transition:border-color .15s,background .15s,box-shadow .15s;
-}
-[data-theme="light"] .auth-input{background:rgba(0,0,0,0.03)}
-.auth-input::placeholder{color:var(--text3);font-family:var(--sans);letter-spacing:0;font-size:.8rem}
-.auth-input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow)}
-.auth-input.err{border-color:var(--red);box-shadow:0 0 0 3px var(--red-dim)}
-
-/* ── Eye button — this is what was broken before ── */
-.auth-eye{
-  position:absolute;right:.75rem;top:50%;transform:translateY(-50%);
-  background:none;border:none;cursor:pointer;padding:4px;
-  color:var(--text3);line-height:0;
-  transition:color .15s;
-  /* CRITICAL: z-index so it sits above the input */
-  z-index:2;
-}
-.auth-eye:hover{color:var(--text2)}
-.auth-eye svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
-
-.auth-error{font-size:.72rem;color:var(--red);min-height:18px;margin-bottom:.5rem;transition:opacity .2s}
-
-.auth-btn{
-  width:100%;padding:.84rem;
-  background:var(--green);color:#021008;
-  border:none;border-radius:var(--r);
-  font-size:.82rem;font-weight:700;font-family:var(--sans);
-  letter-spacing:.04em;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:.5rem;
-  transition:opacity .15s,transform .1s;
-}
-.auth-btn:hover{opacity:.88}
-.auth-btn:active{transform:scale(.98)}
-.auth-btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
-.auth-footer{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--glass-border);font-size:.7rem;color:var(--text3);line-height:1.7}
-.auth-footer code{font-family:var(--mono);color:var(--text2);font-size:.68rem}
-
-/* ══════════════════════════════════════════════
-   APP SHELL
-══════════════════════════════════════════════ */
-#app{
-  position:relative;z-index:1;
-  display:grid;
-  grid-template-rows:54px 1fr;
-  grid-template-columns:292px 1fr;
-  grid-template-areas:"topbar topbar" "sidebar main";
-  height:100vh;padding:10px;gap:8px;
-  opacity:0;pointer-events:none;
-  transition:opacity .45s;
-}
-#app.on{opacity:1;pointer-events:all}
-
-/* ── Topbar ── */
-.topbar{
-  grid-area:topbar;border-radius:var(--r-lg);
-  display:flex;align-items:center;padding:0 1.1rem;gap:.9rem;
-}
-.t-logo{display:flex;align-items:center;gap:.55rem;text-decoration:none}
-.t-logo-icon{width:28px;height:28px;border-radius:var(--r-sm);background:var(--green-dim);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.t-logo-icon svg{width:14px;height:14px;stroke:var(--green);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.t-logo-text{font-family:var(--mono);font-size:.78rem;font-weight:500;color:var(--text);letter-spacing:.04em}
-.t-sep{width:1px;height:16px;background:var(--glass-border-hi);flex-shrink:0}
-.t-status{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:var(--green-dim);border:1px solid var(--green-border);font-family:var(--mono);font-size:.63rem;color:var(--green)}
-.t-status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2.5s ease infinite}
-.t-right{margin-left:auto;display:flex;align-items:center;gap:5px}
-.t-key-chip{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:var(--blue-dim);border:1px solid var(--blue-border);font-family:var(--mono);font-size:.63rem;color:var(--blue)}
-.icon-btn{width:30px;height:30px;border-radius:var(--r-sm);background:var(--glass-bg);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .15s}
-.icon-btn:hover{background:var(--glass-bg-hi);border-color:var(--glass-border-hi);color:var(--text)}
-.icon-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
-.t-link{display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:var(--r-sm);background:var(--glass-bg);border:1px solid var(--glass-border);font-size:.7rem;font-weight:500;color:var(--text2);text-decoration:none;transition:all .15s}
-.t-link:hover{color:var(--text);background:var(--glass-bg-hi);border-color:var(--glass-border-hi)}
-.t-link svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
-
-/* ── Sidebar ── */
-.sidebar{grid-area:sidebar;border-radius:var(--r-lg);display:flex;flex-direction:column;overflow:hidden}
-.sb-sec{padding:1rem;border-bottom:1px solid var(--glass-border);flex-shrink:0}
-.sb-sec.grow{flex:1;overflow-y:auto;min-height:0}
-.sb-sec:last-child{border-bottom:none}
-.sb-sec::-webkit-scrollbar{width:3px}
-
-.sec-label{
-  font-family:var(--mono);font-size:.58rem;font-weight:500;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--text3);
-  margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;
-}
-.sec-label::after{content:'';flex:1;height:1px;background:var(--glass-border)}
-
-/* stat tiles */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.stat-tile{background:var(--glass-bg-hi);border:1px solid var(--glass-border);border-radius:var(--r);padding:.7rem .85rem}
-.stat-tile-label{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
-.stat-tile-val{font-size:.9rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.1}
-.stat-tile-sub{font-family:var(--mono);font-size:.58rem;color:var(--text3);margin-top:2px}
-
-/* arch rows */
-.arch-row{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--glass-border)}
-.arch-row:last-child{border-bottom:none}
-.arch-n{font-family:var(--mono);font-size:.56rem;color:var(--text3);min-width:18px;padding-top:1px}
-.arch-name{font-size:.74rem;font-weight:600;color:var(--text)}
-.arch-detail{font-family:var(--mono);font-size:.6rem;color:var(--text2);margin-top:1px}
-
-/* ── Main area ── */
-.main{grid-area:main;border-radius:var(--r-lg);display:flex;flex-direction:column;overflow:hidden}
-.main-scroll{flex:1;overflow-y:auto;padding:1.25rem;min-height:0}
-.main-scroll::-webkit-scrollbar{width:4px}
-
-/* ── Upload card ── */
-.card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:.8rem}
-.card-head{display:flex;align-items:center;gap:.55rem;padding:.85rem 1.1rem;border-bottom:1px solid var(--glass-border)}
-.card-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
-.card-head-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
-.card-body{padding:1.1rem}
-
-.drop-zone{
-  border:1px dashed var(--glass-border-hi);border-radius:var(--r-lg);
-  padding:2rem 1.25rem;text-align:center;cursor:pointer;
-  position:relative;overflow:hidden;
-  transition:background .15s,border-color .15s;
-}
-.drop-zone:hover,.drop-zone.over{background:var(--green-dim);border-color:var(--green-border)}
-.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
-
-/* scan line animation during processing */
-.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green) 50%,transparent);opacity:0;top:0;pointer-events:none;z-index:3}
-.scanning .scan-line{opacity:.7;animation:scan 1.4s linear infinite}
-
-.up-icon{width:44px;height:44px;border-radius:50%;background:var(--green-dim);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin:0 auto .85rem}
-.up-icon svg{width:20px;height:20px;stroke:var(--green);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-#up-preview{display:none;max-width:100%;max-height:180px;object-fit:contain;border-radius:var(--r);margin:0 auto .75rem}
-.up-text{font-size:.82rem;color:var(--text2);line-height:1.6}
-.up-text strong{color:var(--text)}
-.up-formats{font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:.35rem}
-
-.btn-primary{
-  width:100%;padding:.78rem;margin-top:.9rem;
-  background:var(--green);color:#021008;
-  border:none;border-radius:var(--r);
-  font-size:.82rem;font-weight:700;font-family:var(--sans);
-  letter-spacing:.03em;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:.45rem;
-  transition:opacity .15s,transform .1s;
-}
-.btn-primary:hover{opacity:.88}
-.btn-primary:active{transform:scale(.98)}
-.btn-primary:disabled{opacity:.32;cursor:not-allowed;transform:none}
-.btn-primary svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-
-.btn-ghost{
-  width:100%;padding:.68rem;margin-top:.45rem;
-  background:transparent;border:1px solid var(--glass-border-hi);
-  border-radius:var(--r);color:var(--text2);font-size:.78rem;
-  font-family:var(--sans);cursor:pointer;transition:all .15s;
-}
-.btn-ghost:hover{background:var(--glass-bg-hi);color:var(--text)}
-
-/* spinner */
-#spinner{display:none;padding:1.5rem;text-align:center}
-.spin-ring{width:28px;height:28px;border:2px solid var(--glass-border-hi);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .7rem}
-.spin-label{font-family:var(--mono);font-size:.68rem;color:var(--text2)}
-.progress-wrap{width:100%;height:2px;background:var(--glass-border);border-radius:99px;overflow:hidden;margin-top:.7rem}
-.progress-bar{height:100%;background:var(--green);border-radius:99px;width:35%;position:relative;overflow:hidden}
-.progress-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:shimmer 1.3s ease infinite}
-
-#error-box{display:none;background:var(--red-dim);border:1px solid var(--red-border);border-radius:var(--r);padding:.7rem .9rem;font-size:.78rem;color:var(--red);margin-top:.7rem;line-height:1.5}
-
-/* ── Result panel ── */
-#result-panel{display:none}
-.result-card{border-radius:var(--r-lg);overflow:hidden;margin-bottom:.8rem;animation:fadeUp .3s ease}
-.result-card.r-normal{border-top:2px solid var(--green)}
-.result-card.r-oscc{border-top:2px solid var(--red)}
-
-.result-head{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;border-bottom:1px solid var(--glass-border);flex-wrap:wrap;gap:.4rem}
-.result-head-left{display:flex;align-items:center;gap:.55rem}
-.r-dot{width:7px;height:7px;border-radius:50%}
-.r-head-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
-.r-ts{font-family:var(--mono);font-size:.6rem;color:var(--text3)}
-
-.result-body{display:grid;grid-template-columns:200px 1fr}
-@media(max-width:600px){.result-body{grid-template-columns:1fr}}
-
-.r-img-col{padding:1.1rem;background:rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;border-right:1px solid var(--glass-border)}
-@media(max-width:600px){.r-img-col{border-right:none;border-bottom:1px solid var(--glass-border)}}
-#result-img{width:100%;max-width:160px;height:160px;object-fit:cover;border-radius:var(--r)}
-
-.r-info-col{padding:1.1rem 1.3rem}
-.verdict{font-family:var(--mono);font-size:1.9rem;font-weight:700;letter-spacing:-.04em;line-height:1.1;margin-bottom:.35rem}
-.verdict.vn{color:var(--green)}.verdict.vo{color:var(--red)}
-.verdict-desc{font-size:.76rem;color:var(--text2);line-height:1.65;margin-bottom:1.1rem}
-.conf-lbl{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.35rem}
-.conf-track{height:5px;background:var(--glass-bg-hi);border-radius:99px;overflow:hidden;margin-bottom:.35rem}
-.conf-fill{height:100%;border-radius:99px;transition:width .7s cubic-bezier(.25,.8,.25,1);width:0}
-.conf-fill.fn{background:var(--green)}.conf-fill.fo{background:var(--red)}
-.conf-val{font-family:var(--mono);font-size:1.05rem;font-weight:500}
-.conf-val.fn{color:var(--green)}.conf-val.fo{color:var(--red)}
-.score-bars{margin-top:1rem}
-.score-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem}
-.score-name{font-family:var(--mono);font-size:.63rem;color:var(--text2);width:48px;flex-shrink:0}
-.score-track{flex:1;height:4px;background:var(--glass-bg-hi);border-radius:99px;overflow:hidden}
-.score-bar{height:100%;border-radius:99px;transition:width .7s cubic-bezier(.25,.8,.25,1)}
-.score-bar.sn{background:var(--green)}.score-bar.so{background:var(--red)}
-.score-pct{font-family:var(--mono);font-size:.65rem;font-weight:500;width:38px;text-align:right;color:var(--text);flex-shrink:0}
-.disclaimer{margin-top:.9rem;padding:.6rem .85rem;background:var(--amber-dim);border-left:2px solid var(--amber-border);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:.68rem;color:var(--amber);line-height:1.55}
-
-/* ── XAI panels ── */
-.xai-panel{display:none;border-radius:var(--r-lg);overflow:hidden;margin-bottom:.8rem;animation:fadeUp .3s ease}
-.xai-head{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;border-bottom:1px solid var(--glass-border);flex-wrap:wrap;gap:.4rem}
-.xai-head-left{display:flex;align-items:center;gap:.5rem}
-.xai-tag{padding:2px 7px;border-radius:var(--r-sm);font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase}
-.xai-tag.gc{background:var(--red-dim);color:var(--red);border:1px solid var(--red-border)}
-.xai-tag.lm{background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)}
-.xai-title{font-size:.78rem;font-weight:600;color:var(--text)}
-.xai-desc{font-size:.7rem;color:var(--text2)}
-.xai-body{padding:1.1rem}
-.xai-body img{width:100%;border-radius:var(--r);display:block}
-.xai-legend{display:flex;gap:1rem;margin-top:.7rem;flex-wrap:wrap}
-.leg-item{display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--text2)}
-.leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-
-/* ── Mobile ── */
-@media(max-width:768px){
-  #app{
-    grid-template-rows:54px auto 1fr;
-    grid-template-columns:1fr;
-    grid-template-areas:"topbar" "sidebar" "main";
-    height:auto;min-height:100vh;overflow-y:auto;
-  }
-  .sidebar{max-height:none}
-  .sb-sec.grow{max-height:280px;overflow-y:auto}
-  .main{overflow:visible}
-  .main-scroll{overflow:visible}
-  .t-logo-text{display:none}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSCC · Clinical Interface</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css?v=2">
 </head>
+
 <body>
 
-<div class="orb o1"></div>
-<div class="orb o2"></div>
-<div class="orb o3"></div>
-
-<!-- ══ AUTH GATE ══════════════════════════════════════════════════════ -->
-<div id="auth-gate">
-  <div class="auth-card glass">
-    <div class="auth-brand">
-      <div class="auth-brand-icon">
-        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M7 10l2.5 2.5L14 7"/></svg>
+  <div id="auth-gate" class="auth-gate">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <svg viewBox="0 0 24 24" class="auth-icon" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 18h8" />
+          <path d="M3 22h18" />
+          <path d="M14 22a7 7 0 1 0 0-14h-1" />
+          <path d="M9 14h2" />
+          <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" />
+          <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" />
+        </svg>
+        <div class="auth-brand-text">
+          <div class="auth-title-main">OSCC Detection</div>
+          <div class="auth-subtitle">Clinical Diagnostic Interface</div>
+        </div>
       </div>
-      <div>
-        <div class="auth-brand-name">OSCC · Detection</div>
-        <div class="auth-brand-sub">Clinical AI · FastAPI v2</div>
+
+      <h2 class="auth-heading">Authentication</h2>
+      <p class="auth-desc">Enter your credentials to access the diagnostic dashboard. Leave blank if disabled.</p>
+
+      <div class="auth-field">
+        <input id="key-input" class="auth-input" type="password" placeholder="API Key" autocomplete="off"
+          spellcheck="false">
+        <button class="auth-eye" type="button" id="eye-btn" title="Toggle visibility">
+          <svg id="svg-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <svg id="svg-eye-closed" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path
+              d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+          </svg>
+        </button>
       </div>
-    </div>
 
-    <div class="auth-title">API Authentication</div>
-    <div class="auth-sub">Enter your API key to access the diagnostic dashboard. Leave blank if auth is disabled.</div>
+      <div id="auth-error" class="auth-error"></div>
 
-    <div class="auth-field">
-      <input id="key-input" class="auth-input" type="password" placeholder="Paste API key…" autocomplete="off" spellcheck="false">
-      <button class="auth-eye" type="button" id="eye-btn" title="Show / hide">
-        <!-- eye-open (shown by default) -->
-        <svg id="svg-eye-open" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        <!-- eye-closed (hidden by default) -->
-        <svg id="svg-eye-closed" style="display:none" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      <button class="auth-btn" id="auth-btn" type="button">
+        <span id="auth-btn-label">Access Dashboard</span>
       </button>
-    </div>
-
-    <div id="auth-error" class="auth-error"></div>
-
-    <button class="auth-btn" id="auth-btn" type="button">
-      <span id="auth-btn-label">Access Dashboard</span>
-    </button>
-
-    <div class="auth-footer">
-      Contact your admin for an <code>API_KEYS</code> value.<br>
-      Set <code>API_KEYS=</code> in <code>.env</code> to disable authentication.
     </div>
   </div>
-</div>
 
-<!-- ══ APP ════════════════════════════════════════════════════════════ -->
-<div id="app">
-
-  <!-- Topbar -->
-  <header class="topbar glass">
-    <a class="t-logo" href="#">
-      <div class="t-logo-icon"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M7 10l2.5 2.5L14 7" stroke-width="2"/></svg></div>
-      <span class="t-logo-text">OSCC Detection</span>
-    </a>
-    <div class="t-sep"></div>
-    <div class="t-status"><div class="t-status-dot"></div><span id="model-status-txt">checking…</span></div>
-    <div class="t-right">
-      <div class="t-key-chip" id="key-chip" style="display:none">
-        <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="7" r="4"/><path d="M11 11l3 3"/></svg>
-        <span id="key-chip-text"></span>
+  <div id="app" class="app-container">
+    <header class="topbar">
+      <div class="t-left">
+        <svg viewBox="0 0 24 24" class="t-logo" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 18h8" />
+          <path d="M3 22h18" />
+          <path d="M14 22a7 7 0 1 0 0-14h-1" />
+          <path d="M9 14h2" />
+          <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" />
+          <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" />
+        </svg>
+        <span class="t-title">OSCC Detection</span>
+        <div class="t-sep"></div>
+        <div class="t-status">
+          <div class="t-status-dot"></div>
+          <span id="model-status-txt">connecting...</span>
+        </div>
       </div>
-      <a class="t-link" href="/api/health" target="_blank"><svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg>API</a>
-      <button class="icon-btn" id="theme-btn" title="Toggle theme">
-        <svg id="svg-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-        <svg id="svg-sun" style="display:none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Sidebar -->
-  <aside class="sidebar glass">
-    <div class="sb-sec">
-      <div class="sec-label">Model Specs</div>
-      <div class="stat-grid">
-        <div class="stat-tile"><div class="stat-tile-label">Backbone</div><div class="stat-tile-val" style="font-size:.72rem;padding-top:2px">EfficientNetB3</div><div class="stat-tile-sub">ImageNet · max pool</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Input</div><div class="stat-tile-val">224</div><div class="stat-tile-sub">× 224 × 3 px</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Classes</div><div class="stat-tile-val">2</div><div class="stat-tile-sub">Normal · OSCC</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">XAI</div><div class="stat-tile-val">2</div><div class="stat-tile-sub">Grad-CAM + LIME</div></div>
+      <div class="t-right">
+        <div class="t-key-chip" id="key-chip" style="display:none">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <circle cx="7" cy="7" r="4" />
+            <path d="M11 11l3 3" />
+          </svg>
+          <span id="key-chip-text"></span>
+        </div>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme">
+          <svg id="svg-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+          <svg id="svg-sun" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
       </div>
-    </div>
+    </header>
 
-    <div class="sb-sec grow">
-      <div class="sec-label">Architecture</div>
-      <div class="arch-row"><div class="arch-n">01</div><div><div class="arch-name">EfficientNetB3</div><div class="arch-detail">ImageNet weights · global max pool</div></div></div>
-      <div class="arch-row"><div class="arch-n">02</div><div><div class="arch-name">BatchNormalization</div><div class="arch-detail">momentum=0.99 · ε=0.001</div></div></div>
-      <div class="arch-row"><div class="arch-n">03</div><div><div class="arch-name">Dense (256)</div><div class="arch-detail">ReLU · L1 + L2 regularization</div></div></div>
-      <div class="arch-row"><div class="arch-n">04</div><div><div class="arch-name">Dropout (45%)</div><div class="arch-detail">Prevents overfitting</div></div></div>
-      <div class="arch-row"><div class="arch-n">05</div><div><div class="arch-name">Dense (2) · Softmax</div><div class="arch-detail">Normal / OSCC output</div></div></div>
-
-      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--glass-border)">
-        <div class="sec-label">About OSCC</div>
-        <p style="font-size:.7rem;color:var(--text2);line-height:1.7">
-          Oral Squamous Cell Carcinoma is one of the most common head and neck cancers.
-          Early histopathological detection is critical for patient outcomes.
-          This model classifies tissue slides as <span style="color:var(--green)">Normal</span> or <span style="color:var(--red)">OSCC</span>.
-        </p>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="main glass">
-    <div class="main-scroll">
-
-      <!-- Upload card -->
-      <div class="card">
-        <div class="card-head"><div class="card-dot"></div><span class="card-head-title">Histopathological Image Upload</span></div>
+    <main class="main-content">
+      <section class="card">
+        <div class="card-header">
+          <h2>Histopathological Image Upload</h2>
+        </div>
         <div class="card-body">
           <div class="drop-zone" id="drop-zone">
             <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff">
-            <div class="scan-line"></div>
             <div id="up-icon-wrap" class="up-icon">
-              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
             </div>
-            <img id="up-preview" alt="Preview">
+            <img id="up-preview" alt="Preview" style="display:none;">
             <p id="up-text" class="up-text"><strong>Click to upload</strong> or drag & drop a tissue slide</p>
-            <p id="up-formats" class="up-formats">PNG · JPG · BMP · TIF · up to 16 MB</p>
+            <p id="up-formats" class="up-formats">Supported formats: PNG, JPG, BMP, TIF (Max 16MB)</p>
           </div>
 
-          <div id="error-box"></div>
+          <div id="error-box" class="alert alert-danger" style="display:none;"></div>
 
-          <div id="spinner">
+          <div id="spinner" class="spinner-container" style="display:none;">
             <div class="spin-ring"></div>
-            <div class="spin-label">Running inference · Grad-CAM · LIME<br><span style="color:var(--text3);font-size:.6rem">LIME may take 60 – 90 s</span></div>
-            <div class="progress-wrap"><div class="progress-bar"></div></div>
+            <div class="spin-label">Processing inference and XAI explanations...<br><small>This may take up to 90
+                seconds</small></div>
           </div>
 
-          <button class="btn-primary" id="classify-btn" disabled>
-            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.5 8l2 2 3-3"/></svg>
-            Classify Image
-          </button>
-          <button class="btn-ghost" id="clear-btn">Clear</button>
+          <div class="action-buttons">
+            <button class="btn btn-primary" id="classify-btn" disabled>Classify Image</button>
+            <button class="btn btn-secondary" id="clear-btn">Clear</button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Result panel -->
-      <div id="result-panel">
-        <div class="result-card glass" id="result-card">
-          <div class="result-head">
-            <div class="result-head-left"><div class="r-dot" id="r-dot"></div><span class="r-head-label">Classification Result</span></div>
-            <span class="r-ts" id="r-ts"></span>
+      <div id="result-panel" style="display:none;">
+        <section class="card result-card" id="result-card">
+          <div class="card-header flex-between">
+            <div class="flex-center gap-2">
+              <div class="r-dot" id="r-dot"></div>
+              <h2>Classification Result</h2>
+            </div>
+            <span id="r-ts" class="text-sm text-muted"></span>
           </div>
-          <div class="result-body">
-            <div class="r-img-col"><img id="result-img" alt="Slide"></div>
-            <div class="r-info-col">
-              <div class="verdict" id="verdict"></div>
-              <div class="verdict-desc" id="verdict-desc"></div>
-              <div class="conf-lbl">Model Confidence</div>
-              <div class="conf-track"><div class="conf-fill" id="conf-fill"></div></div>
-              <div class="conf-val" id="conf-val"></div>
-              <div class="score-bars" id="score-bars"></div>
-              <div class="disclaimer">For research &amp; demonstration only. Not a certified medical device. Always consult a qualified pathologist.</div>
+          <div class="card-body grid-layout">
+            <div class="r-img-container">
+              <img id="result-img" alt="Slide Processed">
+            </div>
+            <div class="r-info-container">
+              <div id="verdict" class="verdict-title"></div>
+              <p id="verdict-desc" class="verdict-desc"></p>
+
+              <div class="confidence-section">
+                <div class="text-sm font-semibold mb-1">Model Confidence</div>
+                <div class="progress-track">
+                  <div id="conf-fill" class="progress-fill"></div>
+                </div>
+                <div id="conf-val" class="conf-value"></div>
+              </div>
+
+              <div id="score-bars" class="score-bars"></div>
+              <div class="disclaimer">For research & demonstration only. Not a certified medical device. Consult a
+                qualified pathologist.</div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Grad-CAM -->
-      <div class="xai-panel glass" id="gradcam-panel">
-        <div class="xai-head">
-          <div class="xai-head-left"><span class="xai-tag gc">Grad-CAM</span><span class="xai-title">Gradient Activation Map</span></div>
-          <span class="xai-desc">Where the model focused to reach its decision</span>
+      <section class="card xai-panel" id="gradcam-panel" style="display:none;">
+        <div class="card-header">
+          <h2>Grad-CAM Analysis</h2>
+          <span class="text-sm text-muted">Gradient Activation Map - Spatial Focus</span>
         </div>
-        <div class="xai-body">
-          <img id="gradcam-img" alt="Grad-CAM">
-          <div class="xai-legend">
-            <div class="leg-item"><div class="leg-dot" style="background:#d73027"></div>High activation</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#fee090"></div>Moderate</div>
-            <div class="leg-item"><div class="leg-dot" style="background:#4575b4"></div>Low activation</div>
-          </div>
+        <div class="card-body">
+          <img id="gradcam-img" alt="Grad-CAM" class="xai-img">
         </div>
-      </div>
+      </section>
 
-      <!-- LIME -->
-      <div class="xai-panel glass" id="lime-panel">
-        <div class="xai-head">
-          <div class="xai-head-left"><span class="xai-tag lm">LIME</span><span class="xai-title">Superpixel Explanation</span></div>
-          <span class="xai-desc">Which tissue regions drive the diagnosis</span>
+      <section class="card xai-panel" id="lime-panel" style="display:none;">
+        <div class="card-header">
+          <h2>LIME Analysis</h2>
+          <span class="text-sm text-muted">Superpixel Segmentation - Region Contribution</span>
         </div>
-        <div class="xai-body">
-          <img id="lime-img" alt="LIME">
-          <div class="xai-legend">
-            <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Positive (supports prediction)</div>
-            <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>Negative (works against)</div>
-          </div>
+        <div class="card-body">
+          <img id="lime-img" alt="LIME" class="xai-img">
         </div>
-      </div>
+      </section>
+    </main>
+  </div>
 
-    </div>
-  </main>
-</div>
-
-<script>
-// ══════════════════════════════════════════════
-// THEME
-// ══════════════════════════════════════════════
-(function(){
-  const saved = localStorage.getItem('oscc-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  if(saved === 'light'){
-    document.getElementById('svg-moon').style.display = 'none';
-    document.getElementById('svg-sun').style.display = '';
-  }
-})();
-
-document.getElementById('theme-btn').onclick = function(){
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('oscc-theme', next);
-  document.getElementById('svg-moon').style.display = next === 'dark' ? '' : 'none';
-  document.getElementById('svg-sun').style.display  = next === 'light' ? '' : 'none';
-};
-
-// ══════════════════════════════════════════════
-// AUTH — all logic here, no separate file
-// ══════════════════════════════════════════════
-let _apiKey = '';
-
-// Eye toggle — direct DOM, no indirection
-document.getElementById('eye-btn').onclick = function(){
-  const inp = document.getElementById('key-input');
-  const open = document.getElementById('svg-eye-open');
-  const closed = document.getElementById('svg-eye-closed');
-  if(inp.type === 'password'){
-    inp.type = 'text';
-    open.style.display = 'none';
-    closed.style.display = '';
-  } else {
-    inp.type = 'password';
-    open.style.display = '';
-    closed.style.display = 'none';
-  }
-};
-
-function setAuthError(msg){
-  const el = document.getElementById('auth-error');
-  el.textContent = msg;
-  document.getElementById('key-input').classList.toggle('err', !!msg);
-}
-
-function unlockDashboard(key){
-  _apiKey = key;
-  if(key){
-    const masked = key.slice(0,4) + '••••' + key.slice(-4);
-    document.getElementById('key-chip-text').textContent = masked;
-    document.getElementById('key-chip').style.display = 'flex';
-  }
-  const gate = document.getElementById('auth-gate');
-  gate.style.transition = 'opacity .35s';
-  gate.style.opacity = '0';
-  setTimeout(() => { gate.style.display = 'none'; }, 360);
-  document.getElementById('app').classList.add('on');
-  checkHealth();
-}
-
-async function doAuth(){
-  const key = document.getElementById('key-input').value.trim();
-  const btn = document.getElementById('auth-btn');
-  const lbl = document.getElementById('auth-btn-label');
-  setAuthError('');
-  btn.disabled = true;
-  lbl.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:1.5px solid #021008;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle"></span> Verifying…';
-
-  try {
-    const headers = {'Content-Type':'application/json'};
-    if(key) headers['X-API-Key'] = key;
-    const r = await fetch('/api/auth/verify', {method:'POST', headers});
-    const d = await r.json();
-
-    if(r.status === 403 || (r.ok && d.valid === false)){
-      setAuthError('Invalid API key — please try again.');
-    } else if(r.status === 429){
-      setAuthError('Too many attempts. Please wait a moment.');
-    } else if(!r.ok){
-      setAuthError('Server error. Is the app running?');
-    } else {
-      // valid or auth_required:false
-      unlockDashboard(key);
-      return;
-    }
-  } catch(e){
-    setAuthError('Cannot reach server. Is the app running?');
-  }
-
-  btn.disabled = false;
-  lbl.textContent = 'Access Dashboard';
-}
-
-document.getElementById('auth-btn').onclick = doAuth;
-document.getElementById('key-input').onkeydown = e => { if(e.key === 'Enter') doAuth(); };
-
-// Auto-check if auth is even needed
-(async function(){
-  try{
-    const r = await fetch('/api/auth/verify', {method:'POST', headers:{'Content-Type':'application/json'}});
-    const d = await r.json();
-    if(!d.auth_required) unlockDashboard('');
-  } catch(_){}
-})();
-
-// ══════════════════════════════════════════════
-// UPLOAD
-// ══════════════════════════════════════════════
-let _file = null;
-
-function showPreview(file){
-  _file = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const prev = document.getElementById('up-preview');
-    prev.src = e.target.result;
-    prev.style.display = 'block';
-    document.getElementById('up-icon-wrap').style.display = 'none';
-    document.getElementById('up-text').style.display = 'none';
-    document.getElementById('up-formats').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-  document.getElementById('classify-btn').disabled = false;
-  document.getElementById('error-box').style.display = 'none';
-  hideResults();
-}
-
-function clearAll(){
-  _file = null;
-  const prev = document.getElementById('up-preview');
-  prev.src = ''; prev.style.display = 'none';
-  document.getElementById('up-icon-wrap').style.display = '';
-  document.getElementById('up-text').style.display = '';
-  document.getElementById('up-formats').style.display = '';
-  document.getElementById('classify-btn').disabled = true;
-  document.getElementById('error-box').style.display = 'none';
-  document.getElementById('file-input').value = '';
-  hideResults();
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-function hideResults(){
-  ['result-panel','gradcam-panel','lime-panel'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.style.display = 'none';
-  });
-}
-
-document.getElementById('file-input').onchange = e => { if(e.target.files[0]) showPreview(e.target.files[0]); };
-document.getElementById('clear-btn').onclick = clearAll;
-
-const dz = document.getElementById('drop-zone');
-dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
-dz.ondragleave = () => dz.classList.remove('over');
-dz.ondrop = e => { e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]); };
-
-// ══════════════════════════════════════════════
-// CLASSIFY
-// ══════════════════════════════════════════════
-document.getElementById('classify-btn').onclick = async function(){
-  if(!_file) return;
-  const btn = this;
-  btn.disabled = true;
-  document.getElementById('spinner').style.display = 'block';
-  document.getElementById('error-box').style.display = 'none';
-  hideResults();
-  dz.classList.add('scanning');
-
-  try {
-    const fd = new FormData();
-    fd.append('file', _file);
-    const headers = {};
-    if(_apiKey) headers['X-API-Key'] = _apiKey;
-
-    const r = await fetch('/api/predict', {method:'POST', headers, body:fd});
-    const data = await r.json();
-    document.getElementById('spinner').style.display = 'none';
-    dz.classList.remove('scanning');
-    btn.disabled = false;
-
-    if(!r.ok || data.error || data.detail){
-      const msg = data.detail || data.error || r.statusText;
-      const eb = document.getElementById('error-box');
-      eb.textContent = 'Error: ' + msg;
-      eb.style.display = 'block';
-      return;
-    }
-
-    renderResults(data);
-  } catch(e){
-    document.getElementById('spinner').style.display = 'none';
-    dz.classList.remove('scanning');
-    btn.disabled = false;
-    const eb = document.getElementById('error-box');
-    eb.textContent = 'Network error — is the server running?';
-    eb.style.display = 'block';
-  }
-};
-
-// ══════════════════════════════════════════════
-// RENDER RESULTS
-// ══════════════════════════════════════════════
-function renderResults(data){
-  const {prediction, image, gradcam, lime} = data;
-  const {class:cls, confidence, scores} = prediction;
-  const isOSCC = cls === 'OSCC';
-  const cc = isOSCC ? 'o' : 'n'; // class code for CSS
-
-  // Result panel
-  document.getElementById('result-panel').style.display = 'block';
-  const card = document.getElementById('result-card');
-  card.className = 'result-card glass ' + (isOSCC ? 'r-oscc' : 'r-normal');
-
-  document.getElementById('r-dot').style.background = isOSCC ? 'var(--red)' : 'var(--green)';
-  document.getElementById('r-ts').textContent = new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  document.getElementById('result-img').src = 'data:image/jpeg;base64,' + image;
-
-  const vEl = document.getElementById('verdict');
-  vEl.textContent = cls;
-  vEl.className = 'verdict v' + cc;
-
-  document.getElementById('verdict-desc').textContent = isOSCC
-    ? 'The model detected features consistent with Oral Squamous Cell Carcinoma.'
-    : 'No OSCC features detected. Tissue appears histologically normal.';
-
-  const fill = document.getElementById('conf-fill');
-  fill.className = 'conf-fill f' + cc;
-  setTimeout(() => fill.style.width = confidence + '%', 60);
-
-  const cv = document.getElementById('conf-val');
-  cv.textContent = confidence.toFixed(1) + '%';
-  cv.className = 'conf-val f' + cc;
-
-  // Score bars
-  const sb = document.getElementById('score-bars');
-  sb.innerHTML = Object.entries(scores).map(([lbl, pct]) => {
-    const sc = lbl === 'OSCC' ? 'o' : 'n';
-    return `<div class="score-row">
-      <span class="score-name">${lbl}</span>
-      <div class="score-track"><div class="score-bar s${sc}" style="width:0" data-pct="${pct}"></div></div>
-      <span class="score-pct">${pct.toFixed(1)}%</span>
-    </div>`;
-  }).join('');
-  setTimeout(() => sb.querySelectorAll('.score-bar').forEach(b => b.style.width = b.dataset.pct + '%'), 60);
-
-  // XAI
-  document.getElementById('gradcam-panel').style.display = 'block';
-  document.getElementById('gradcam-img').src = 'data:image/png;base64,' + gradcam;
-  document.getElementById('lime-panel').style.display = 'block';
-  document.getElementById('lime-img').src = 'data:image/png;base64,' + lime;
-
-  document.getElementById('result-panel').scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-// ══════════════════════════════════════════════
-// HEALTH CHECK
-// ══════════════════════════════════════════════
-async function checkHealth(){
-  try{
-    const r = await fetch('/api/health');
-    const d = await r.json();
-    const el = document.getElementById('model-status-txt');
-    if(el){
-      el.textContent = d.model_loaded ? 'model ready' : 'model not loaded';
-      el.style.color = d.model_loaded ? '' : 'var(--red)';
-    }
-  } catch(_){}
-}
-</script>
+  <script src="/static/js/app.js?v=2"></script>
 </body>
+
 </html>
