@@ -1,19 +1,27 @@
-# Core
-Flask==3.0.0
-Werkzeug==3.0.1
+# ── Web framework ─────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
 
-# ML / Model
-tensorflow==2.16.1
+# ── Config / secrets ──────────────────────────────────────────────────────────
+pydantic-settings>=2.5.0
+python-dotenv>=1.0.0
+
+# ── ML / model ────────────────────────────────────────────────────────────────
+# Use tensorflow-cpu — NOT tensorflow (installs broken tensorflow-intel on Windows)
+tensorflow-cpu==2.16.1
 numpy==1.26.4
 
-# Image processing
+# ── Image processing ──────────────────────────────────────────────────────────
 Pillow==10.1.0
-opencv-python==4.9.0.80
+opencv-python-headless==4.9.0.80
 
-# Explainable AI
+# ── Explainable AI ────────────────────────────────────────────────────────────
 lime==0.2.0.1
 scikit-image==0.22.0
+scikit-learn>=1.3.0
 matplotlib==3.8.3
 
-# Utilities
-scikit-learn>=1.3.0
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest>=8.0.0
+httpx>=0.27.0

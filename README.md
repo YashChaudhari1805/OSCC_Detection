@@ -1,15 +1,124 @@
-# OSCC Detection Web App (In the process of creating our own dataset.)
-### Oral Squamous Cell Carcinoma Detection using Deep Learning (EfficientNetB3) + Explainable AI
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue) ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.16-orange) ![Flask](https://img.shields.io/badge/Flask-3.0-green) ![Model](https://img.shields.io/badge/Model-EfficientNetB3-purple) ![XAI](https://img.shields.io/badge/XAI-Grad--CAM%20%2B%20LIME-teal)
+# OSCC Detection · Clinical AI Dashboard
 
-A clinical-grade binary image classifier that detects **Oral Squamous Cell Carcinoma (OSCC)** from histopathological images. Built with transfer learning on EfficientNetB3, served via a Flask web application, and integrated with **Grad-CAM** and **LIME** for full Explainable AI (XAI) support.
+**Oral Squamous Cell Carcinoma detection from histopathological slides — EfficientNetB3 + Grad-CAM + LIME**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![TensorFlow](https://img.shields.io/badge/TF--CPU-2.16-FF6F00?style=flat&logo=tensorflow&logoColor=white)](https://tensorflow.org)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat&logo=docker&logoColor=white)](https://docker.com)
+
+</div>
 
 ---
 
-## What is OSCC?
+## Overview
 
-Oral Squamous Cell Carcinoma is one of the most common cancers of the head and neck region. Early detection via histopathological analysis is critical for improving patient outcomes. This model automates that screening step by classifying tissue images as either **Normal** or **OSCC**.
+A clinical-grade binary image classifier detecting **OSCC** from histopathological slides. Built on EfficientNetB3 transfer learning, served via a **FastAPI** backend, with **Grad-CAM** and **LIME** explainability baked in.
+
+The dashboard is a single self-contained HTML file — glassmorphic dark/light UI, scan-line animation, working auth gate, show/hide password, responsive on mobile and desktop.
+
+---
+
+## Quick Start
+
+```powershell
+# 1 — Clone and create venv
+git clone https://github.com/you/oscc-detection.git
+cd oscc-detection
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS / Linux
+
+# 2 — Install (tensorflow-cpu avoids the broken Windows intel stub)
+pip install -r requirements.txt
+
+# 3 — Rebuild model (needs my_final_oscc_model.h5 in the project root)
+python rebuild_model.py
+
+# 4 — Configure
+copy .env.example .env        # Windows
+# cp .env.example .env        # macOS/Linux
+# Edit .env — set API_KEYS if you want auth
+
+# 5 — Run
+python main.py
+```
+
+Open **http://localhost:8000** · API docs at **http://localhost:8000/docs**
+
+---
+
+## Why `tensorflow-cpu` not `tensorflow`?
+
+On Windows, `pip install tensorflow` installs **`tensorflow-intel`** — a stub package that omits `tensorflow.python.trackable` and several other internal modules, breaking keras 3.  
+`tensorflow-cpu` is the real build and works correctly on all platforms.
+
+---
+
+## Docker (Local)
+
+```powershell
+# Build the model file first (outside Docker)
+python rebuild_model.py
+
+copy .env.example .env   # fill in API_KEYS etc.
+docker compose up --build
+```
+
+The `.keras` model is mounted read-only at runtime — it is never baked into the image.
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `API_KEYS` | *(empty)* | Comma-separated keys. Empty = auth disabled. |
+| `MODEL_PATH` | `oscc_model_rebuilt.keras` | Path to the `.keras` model file |
+| `PORT` | `8000` | Server port |
+| `RATE_LIMIT_PER_MINUTE` | `30` | Max requests per IP per minute |
+| `ALLOWED_ORIGINS` | `*` | CORS origins (comma-separated) |
+| `ENVIRONMENT` | `development` | `development` or `production` |
+| `LOG_LEVEL` | `info` | Uvicorn log level |
+| `LIME_NUM_SAMPLES` | `1000` | LIME perturbations (higher = slower but more accurate) |
+| `MAX_UPLOAD_MB` | `16` | Max upload file size |
+
+---
+
+## API Reference
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/` | — | Dashboard UI |
+| `GET` | `/api/health` | No | Health + model status |
+| `POST` | `/api/auth/verify` | No | Verify API key (used by login gate) |
+| `POST` | `/api/predict` | Yes | Classify + Grad-CAM + LIME |
+
+Interactive Swagger docs: **http://localhost:8000/docs**
+
+### Predict example
+
+```bash
+curl -X POST http://localhost:8000/api/predict \
+  -H "X-API-Key: your_key" \
+  -F "file=@slide.jpg"
+```
+
+```json
+{
+  "success": true,
+  "prediction": {
+    "class": "OSCC",
+    "confidence": 94.73,
+    "scores": { "Normal": 5.27, "OSCC": 94.73 }
+  },
+  "image":   "<base64 JPEG>",
+  "gradcam": "<base64 PNG>",
+  "lime":    "<base64 PNG>"
+}
+```
 
 ---
 
@@ -17,183 +126,60 @@ Oral Squamous Cell Carcinoma is one of the most common cancers of the head and n
 
 ```
 oscc-detection/
-├── app.py                    # Flask web application (inference + XAI server)
-├── rebuild_model.py          # Script to rebuild model from original .h5 weights
-├── model_converter.py        # Utility to convert legacy model formats
-├── requirements.txt          # Python dependencies
-├── oscc_model_rebuilt.keras  # Trained model (generated by rebuild_model.py)
+├── core/
+│   ├── config.py        Pydantic-settings (all env vars)
+│   ├── model.py         Load, preprocess, run inference
+│   └── xai.py           Grad-CAM and LIME
 ├── templates/
-│   └── index.html            # Frontend UI — upload, prediction, Grad-CAM & LIME display
-├── uploads/                  # Temporary upload folder (auto-created)
-└── README.md
-```
-
-> **Note:** The notebook (`oscc.ipynb`) was used for training on Google Colab with GPU. It is not required to run the web app.
-
----
-
-## Model Architecture
-
-| Component         | Detail                                      |
-|-------------------|---------------------------------------------|
-| Base Model        | EfficientNetB3 (pretrained on ImageNet)     |
-| Pooling           | Global Max Pooling (`pooling='max'`)        |
-| Normalization     | BatchNormalization (momentum=0.99)          |
-| Dense Layer       | 256 units, ReLU, L1+L2 regularization      |
-| Dropout           | 45% dropout (seed=123)                      |
-| Output Layer      | 2 units, Softmax (Normal / OSCC)            |
-| Optimizer         | Adamax (lr=0.001)                           |
-| Loss              | Categorical Crossentropy                    |
-| Input Size        | 224 × 224 × 3                               |
-
----
-
-## Explainable AI (XAI)
-
-Every prediction automatically generates two visual explanations to help clinicians understand and verify the model's decision.
-
-### Grad-CAM (Gradient-weighted Class Activation Mapping)
-Generates a heatmap by computing gradients with respect to the final convolutional layer (`top_conv` in EfficientNetB3). Red/yellow regions indicate areas that most strongly influenced the classification.
-
-| Property       | Detail                                              |
-|----------------|-----------------------------------------------------|
-| Target Layer   | `top_conv` (inside EfficientNetB3)                  |
-| Output         | Original · Heatmap · Overlay (3-panel figure)       |
-| Speed          | Fast — runs in seconds alongside inference          |
-| Clinical Use   | Shows **where** the model is looking in the tissue  |
-
-### LIME (Local Interpretable Model-agnostic Explanations)
-Perturbs the image into superpixels and measures how prediction confidence changes when each region is hidden. Produces a segmentation map of positive (green) and negative (red) contributing regions.
-
-| Property       | Detail                                                        |
-|----------------|---------------------------------------------------------------|
-| Perturbations  | 1000 samples per image                                        |
-| Output         | Original · LIME Regions · Positive vs Negative (3-panel)     |
-| Speed          | ~60–90 seconds per image                                      |
-| Clinical Use   | Shows **which specific tissue regions** drive the diagnosis   |
-
-### XAI Comparison
-
-| Criterion              | Grad-CAM                   | LIME                            |
-|------------------------|----------------------------|---------------------------------|
-| Speed                  | Seconds                    | 60–90 seconds                   |
-| Precision              | Coarse heatmap             | Precise superpixel boundaries   |
-| Clinician Readability  | Moderate                   | High                            |
-| Model-agnostic         | No (CNN-specific)          | Yes                             |
-
-> Both explanations are generated automatically on every prediction and displayed directly in the web UI.
-
----
-
-## Setup & Installation
-
-### Prerequisites
-- Python 3.9 or 3.10
-- pip
-- Your trained model file: `my_final_oscc_model.h5`
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/yourusername/oscc-detection.git
-cd oscc-detection
-```
-
-### 2. Create and activate a virtual environment
-```bash
-python -m venv venv
-source venv/bin/activate        # On Windows: venv\Scripts\activate
-```
-
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Rebuild the model (required on first run)
-Place your original `my_final_oscc_model.h5` in the project root, then run:
-```bash
-python rebuild_model.py
-```
-This generates `oscc_model_rebuilt.keras`, which is what the app uses.
-
-### 5. Start the Flask server
-```bash
-python app.py
-```
-
-The app will be available at: **http://localhost:5000**
-
----
-
-## Usage
-
-1. Open your browser and navigate to `http://localhost:5000`
-2. Upload a histopathological image (PNG, JPG, JPEG, BMP, TIF supported)
-3. Click **Classify image**
-4. The app returns:
-   - Classification result (**Normal** or **OSCC**) with confidence score
-   - Per-class probability bars (Normal % and OSCC %)
-   - **Grad-CAM** heatmap overlay
-   - **LIME** superpixel explanation
-
-> Note: Each request takes ~60–90 seconds due to LIME processing 1000 image perturbations.
-
-### API Endpoint
-
-You can also use the REST API directly:
-
-```bash
-curl -X POST http://localhost:5000/predict \
-  -F "file=@your_image.jpg"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "prediction": {
-    "class": "OSCC",
-    "confidence": 94.73,
-    "scores": {
-      "Normal": 5.27,
-      "OSCC": 94.73
-    }
-  },
-  "image": "<base64_encoded_image>",
-  "gradcam": "<base64_encoded_png>",
-  "lime": "<base64_encoded_png>"
-}
-```
-
-**Health check:**
-```bash
-curl http://localhost:5000/health
+│   └── index.html       Complete dashboard (CSS + JS fully inline — no load-order bugs)
+├── tests/
+│   ├── conftest.py      Shared fixtures
+│   ├── test_api.py      FastAPI integration tests
+│   └── test_unit.py     Config / inference / preprocessing / rate-limiter tests
+├── main.py              FastAPI app + all routes + rate limiter + auth
+├── rebuild_model.py     Rebuild .keras from original .h5 weights
+├── Dockerfile           Multi-stage slim build
+├── docker-compose.yml   Local deployment
+├── render.yaml          Render Docker deployment
+├── requirements.txt     Dependencies (tensorflow-cpu, fastapi, uvicorn…)
+└── .env.example         Config template
 ```
 
 ---
 
-## Training (Google Colab)
+## Deployment on Render
 
-The model was trained on Google Colab using GPU acceleration. Key training details:
+`render.yaml` uses `runtime: docker` — Render builds from your `Dockerfile` directly.
 
-| Parameter         | Value                                        |
-|-------------------|----------------------------------------------|
-| Image Size        | 224 × 224                                    |
-| Batch Size        | 16                                           |
-| Max Epochs        | 100 (EarlyStopping, patience=10)             |
-| Augmentation      | Horizontal flip                              |
-| Preprocessing     | EfficientNet `preprocess_input`              |
-| Dataset Split     | Train / Validation / Test                    |
-| Best Checkpoint   | Saved via `ModelCheckpoint` (val_loss)       |
+**The model file:** `.keras` is gitignored. For Render free tier, temporarily commit it:
+
+```bash
+# Remove *.keras from .gitignore temporarily
+git add oscc_model_rebuilt.keras
+git commit -m "add model for deploy"
+git push
+# Re-add to .gitignore afterward
+```
+
+**Steps:**
+1. Push repo to GitHub
+2. Render → New → Web Service → connect repo
+3. Set env vars in Render dashboard: `API_KEYS`, `SECRET_KEY`, `ENVIRONMENT=production`, `ALLOWED_ORIGINS=https://your-app.onrender.com`
+4. Deploy — Docker build takes ~5–8 min (TF is large)
+
+---
+
+## Running Tests
+
+```bash
+pytest -v
+```
 
 ---
 
 ## Known Limitations
 
-- This tool is for **research and demonstration purposes only** and is not a certified medical device
-- Performance depends on image quality and staining consistency
-- Model was trained on a specific dataset; generalization to other labs' slides may vary
-- A magnification bias has been identified — the model performs better on 400x images than 100x. This will be addressed when the final custom dataset is created with balanced magnification levels
-- LIME processing takes ~60–90 seconds per image due to 1000 perturbation samples
-
----
+- Research/demonstration only — not a certified medical device
+- LIME takes ~60–90 seconds (1000 perturbation samples)
+- Magnification bias: performs better on 400× slides than 100×
+- Free Render tier: no persistent disk, ~30s cold start after 15 min idle

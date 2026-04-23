@@ -1,0 +1,16 @@
+services:
+  oscc-app:
+    build: .
+    container_name: oscc-detection
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./oscc_model_rebuilt.keras:/app/oscc_model_rebuilt.keras:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3

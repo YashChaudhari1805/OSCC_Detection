@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: oscc-detection
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: API_KEYS
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: 8000
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: MODEL_PATH
+        value: oscc_model_rebuilt.keras
