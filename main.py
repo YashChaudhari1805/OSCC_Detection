@@ -7,6 +7,7 @@ Run: python main.py  OR  uvicorn main:app --reload
 
 import base64
 import io
+import os
 import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
@@ -39,7 +40,7 @@ async def lifespan(app: FastAPI):
         print("[WARN] Model not loaded. /api/predict will return 503.")
         print("  Run: python rebuild_model.py  (needs my_final_oscc_model.h5)")
     else:
-        print(f"[OK] Serving on http://{settings.host}:{settings.port}")
+        print(f"[OK] Model loaded. Serving on http://{settings.host}:{settings.port}")
     yield
 
 
@@ -60,8 +61,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-API-Key"],
 )
 
-# Serve static assets — only mount if the folder exists AND has content,
-# so a fresh Docker image (no static files) doesn't raise a startup error.
 _STATIC = Path(__file__).parent / "static"
 if _STATIC.exists() and any(_STATIC.iterdir()):
     app.mount("/static", StaticFiles(directory=str(_STATIC)), name="static")
@@ -177,7 +176,6 @@ async def predict(file: UploadFile = File(...)):
     _check_file(file)
 
     raw = await file.read()
-    # Secondary size check (file.size may be None for streamed uploads)
     if len(raw) > settings.max_upload_bytes:
         raise HTTPException(
             status_code=413,
@@ -206,12 +204,18 @@ async def predict(file: UploadFile = File(...)):
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
+# NOTE: This block is only used when running locally with `python main.py`.
+# On Render (and in Docker), the CMD in Dockerfile calls uvicorn directly,
+# which bypasses this block entirely — that's intentional and correct.
+# Never set reload=True in production; it forks a subprocess that Render
+# cannot detect when scanning for open ports.
 
 if __name__ == "__main__":
+    is_prod = settings.is_production
     uvicorn.run(
         "main:app",
         host=settings.host,
         port=settings.port,
-        reload=not settings.is_production,
+        reload=not is_prod,       # False in production, True only for local dev
         log_level=settings.log_level,
     )

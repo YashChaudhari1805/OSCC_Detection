@@ -3,18 +3,25 @@ services:
     name: oscc-detection
     runtime: docker
     dockerfilePath: ./Dockerfile
+
+    # Git LFS: Render's Docker builder DOES fetch LFS files automatically
+    # as of 2023 — no extra config needed as long as your repo has LFS set up.
+    # If the model still fails to load, see README for the manual commit approach.
+
     envVars:
       - key: API_KEYS
-        sync: false
+        sync: false           # set manually in Render dashboard
       - key: SECRET_KEY
-        sync: false
+        sync: false           # set manually in Render dashboard
       - key: ENVIRONMENT
         value: production
       - key: PORT
-        value: 8000
+        value: "8000"
       - key: RATE_LIMIT_PER_MINUTE
         value: "20"
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: MODEL_PATH
         value: oscc_model_rebuilt.keras
+      - key: LOG_LEVEL
+        value: info
