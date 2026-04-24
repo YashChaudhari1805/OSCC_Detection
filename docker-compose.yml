@@ -6,11 +6,19 @@ services:
       - "8000:8000"
     env_file: .env
     volumes:
+      # Model file is mounted read-only — never baked into the image
       - ./oscc_model_rebuilt.keras:/app/oscc_model_rebuilt.keras:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')",
+        ]
       interval: 30s
       timeout: 15s
-      start_period: 30s
+      # TF model load can take ~30s; give it 60s before first health probe
+      start_period: 60s
       retries: 3

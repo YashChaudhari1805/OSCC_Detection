@@ -78,7 +78,6 @@ class TestRateLimiter:
     def test_under_limit_passes(self):
         from core.config import Settings
         import main
-        # patch the windows dict so we start fresh
         original = main._windows.copy()
         main._windows.clear()
         from fastapi.testclient import TestClient
